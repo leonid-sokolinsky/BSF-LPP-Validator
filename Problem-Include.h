@@ -9,3 +9,4 @@ Author: Leonid B. Sokolinsky
 #include <math.h>
 #include <omp.h>
 #include <stdio.h>
+#include <float.h>

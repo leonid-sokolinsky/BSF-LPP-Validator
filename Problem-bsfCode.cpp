@@ -23,6 +23,11 @@ void PC_bsf_Init(bool *success) {
 			cout << "Total number of points on hypersphere PP_K = " << PP_K << " must be less than " << 2147483647 << ".\n";
 		*success = false; return;
 	}
+	if ((int)PP_K != PP_K_INT) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "PP_K = " << PP_K << "\t not equal\t" << "PP_K_INT = " << PP_K_INT << "!\n";
+		*success = false; return;
+	}
 	if (PP_N < 3) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "Dimension PP_N = " << PP_N << " must be greater than " << 2 << ".\n";
@@ -92,20 +97,23 @@ void PC_bsf_Init(bool *success) {
 
 	fclose(stream);
 
-	if (BSF_sv_mpiRank == 0)
+	/*if (BSF_sv_mpiRank == 0) {
+		int counter = 0;
 		for (int i = 0; i < PP_M; i++)
 			if (!PointIn(PD_x, PD_A[i], PD_b[i])) {
 				cout << "\tPoint x = (";
 				for (int j = 0; j < PP_N; j++)
-					cout << setw(3) << PD_x[j];
+					cout << setw(PP_SETW) << PD_x[j];
 				cout << ") does not satisfies to the following inequality!: ";
 				for (int j = 0; j < PP_N; j++)
-					cout << setw(8) << PD_A[i][j];
-				cout << "\t<=" << setw(5) << PD_b[i] << endl;
+					cout << setw(PP_SETW) << PD_A[i][j];
+				cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
 				*success = false; return;
 			}
+	}/**/
 
-	PD_objF_x = Vector_DotProduct(PD_x, PD_c);
+	PD_objF_x = ObjectiveF(PD_x);
+	Vector_Copy(PD_x, PD_p);
 
 	*success = true;
 }
@@ -114,8 +122,16 @@ void PC_bsf_SetListSize(int *listSize) {
 	*listSize = (int)PP_K;
 }
 
+void PC_bsf_SetListSizeMax(int* maxListSize) {
+	// Optional filling. Do not delete!
+}
+
 void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
 	// Nothing to do with stuff!
+}
+
+void PC_bsf_SetMapListElemMax(PT_bsf_mapElem_T* elem, int i) {
+	// Optional filling. Do not delete!
 }
 
 void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int *success) {	// For Job 0
@@ -130,7 +146,7 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 	if (BSF_sv_mpiRank == 0) {
 		cout << "PC_bsf_MapF: ";
 		for (int j = 0; j < PP_N; j++) 
-			cout << setw(8) << p[j];
+			cout << setw(PP_SETW) << p[j];
 	} /* End debug */
 
 	for (int i = 0; i < PP_M; i++) {
@@ -149,20 +165,23 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 		}
 	}
 
-	objF_p = Vector_DotProduct(p, PD_c);
-	if (fabs(objF_p - PD_objF_x) < PP_EPS_ZERO || objF_p < PD_objF_x)
+	objF_p = ObjectiveF(p);
+	if (objF_p < PD_objF_x)
 		reduceElem->ok = true;
-	else
+	else {
 		reduceElem->ok = false;
-
-	/* Debug *//*
-	if (BSF_sv_mpiRank == 0) {
-		if (fabs(objF_p - PD_objF_x) < PP_EPS_ZERO || objF_p < PD_objF_x)
-			cout << "\t F(p)<F(x)\n";
-		else
-			cout << "\t F(p)>F(x)\n";
-		//system("pause");
-	} /* End debug */
+		if (objF_p > PD_objF_pMax) {
+			Vector_Copy(p, PD_pMax);
+			PD_objF_pMax = objF_p;
+		}
+			/* Debug *//*
+			if (BSF_sv_mpiRank == 0) {
+				if (fabs(objF_p - PD_objF_x) >= PP_EPS_ZERO && objF_p + PP_EPS_ZERO >= PD_objF_x) {
+					cout << setw(PP_SETW) << "F(p)=" << objF_p << "\t>\tF(x)=" << PD_objF_x << endl;
+					system("pause");
+				}
+			} /* End debug */
+	}
 }
 
 void PC_bsf_MapF_1(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_1* reduceElem, int* success) {// For Job 1
@@ -190,7 +209,7 @@ void PC_bsf_ReduceF_2(PT_bsf_reduceElem_T_2* x, PT_bsf_reduceElem_T_2* y, PT_bsf
 }
 
 void PC_bsf_ReduceF_3(PT_bsf_reduceElem_T_3* x, PT_bsf_reduceElem_T_3* y, PT_bsf_reduceElem_T_3* z) {	// For Job 3
-	// optional filling
+	// Optional filling. Do not delete!
 }
 
 void PC_bsf_ProcessResults(		// For Job 0
@@ -200,7 +219,22 @@ void PC_bsf_ProcessResults(		// For Job 0
 	int *nextJob,
 	bool *exit 
 ) {
-	*exit = true;
+	if (PD_firstTime) {
+		PD_solutionIsOk = reduceResult->ok;
+		if (PD_solutionIsOk) {
+			*exit = true;
+			return;
+		}
+	}
+
+	double diff = fabs(PD_objF_pMax - PD_objF_x);
+	if (diff < PP_EPS_ZERO) {
+		*exit = true;
+		return;
+	}
+	Vector_Copy(PD_pMax, PD_x);
+	PD_objF_x = PD_objF_pMax;
+	PD_firstTime = false;
 }
 
 void PC_bsf_ProcessResults_1(	// For Job 1	
@@ -233,6 +267,14 @@ void PC_bsf_ProcessResults_3(	// For Job 3
 	// Optional filling. Do not delete!
 }
 
+void PC_bsf_JobDispatcher(
+	PT_bsf_parameter_T* parameter, // Current Approximation
+	int* job,
+	bool* exit
+) {
+	// Optional filling. Do not delete!
+}
+
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "=================================================== Problem parameters ====================================================" << endl;
 	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
@@ -254,17 +296,17 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "------- Matrix A & Column b -------\n";
 	for (int i = 0; i < PP_M; i++) {
 		for (int j = 0; j < PP_N; j++)
-			cout << setw(5) << PD_A[i][j];
-		cout << "\t<=" << setw(5) << PD_b[i] << endl;
+			cout << setw(PP_SETW) << PD_A[i][j];
+		cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
 	};
 #endif // PP_MATRIX_OUTPUT
 	
 	cout << "Objective Function: c = "; 
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(6) << PD_c[j]; 
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_c[j];
 	cout << (PP_OUTPUT_LIMIT < PP_N ? "	..." : "") << endl;
 	cout << "Solution to Check:  x = ";
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(6) << PD_x[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(12) << PD_x[PP_N - 1];
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_x[j];
+	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_x[PP_N - 1];
 	cout << endl;
 	cout << "Value of Objective Function in Point x = " << PD_objF_x << endl;
 	cout << "-------------------------------------------" << endl;
@@ -301,10 +343,16 @@ void PC_bsf_IterOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter,
 void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter, double t) {	// For Job 0
 	cout << "=============================================" << endl;
 	cout << "Time: " << t << endl;
-	if (reduceResult->ok)
+	cout << "Points in polytope: " << round((double)reduceCounter*100 / (double)PP_K) << "%.\n";
+	if (PD_solutionIsOk)
 		cout << "The solution is correct!\n";
-	else
+	else {
 		cout << "The solution is NOT correct!\n";
+		cout << "Correct solution:   p = ";
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_x[j];
+		if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_x[PP_N - 1];
+		cout << endl;
+	}
 }
 
 void PC_bsf_ProblemOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
@@ -364,7 +412,7 @@ static void CheckPoint(PT_vector_T p, int k) {
 	if (BSF_sv_mpiRank == 0) {
 		cout << "CheckPoint("<< k << "):";
 		for (int j = 0; j < PP_N; j++)
-			cout << setw(8) << p[j];
+			cout << setw(PP_SETW) << p[j];
 		//system("pause");
 	} /* End debug */
 }
@@ -389,7 +437,7 @@ static void Angles(PT_angles_T phi, int k) {
 inline bool PointIn(PT_vector_T x, PT_vector_T a, PT_float_T b) { // If the point belonges to the Halfspace <a,x> <= b
 	PT_float_T dotProduct_a_x = Vector_DotProduct(a, x);
 
-	if (fabs(dotProduct_a_x - b) < PP_EPS_ZERO || dotProduct_a_x < b)
+	if (dotProduct_a_x < b + PP_EPS_ZERO)
 		return true;
 	else
 		return false;
@@ -399,5 +447,33 @@ inline double Vector_DotProduct(PT_vector_T x, PT_vector_T y) {
 	double s = 0;
 	for (int j = 0; j < PP_N; j++)
 		s += x[j] * y[j];
+	return s;
+}
+
+inline void Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint) { // toPoint = fromPoint
+	for (int j = 0; j < PP_N; j++) {
+		toPoint[j] = fromPoint[j];
+	}
+}
+
+inline void Vector_Subtraction(PT_vector_T x, PT_vector_T y, PT_vector_T z) {  // z = x - y
+	for (int j = 0; j < PP_N; j++) {
+		z[j] = x[j] - y[j];
+	}
+}
+
+inline double Vector_NormSquare(PT_vector_T x) {
+	double sum = 0;
+
+	for (int j = 0; j < PP_N; j++) {
+		sum += x[j] * x[j];
+	}
+	return sum;
+}
+
+inline double ObjectiveF(PT_vector_T x) {
+	double s = 0;
+	for (int j = 0; j < PP_N; j++)
+		s += PD_c[j] * x[j];
 	return s;
 }
