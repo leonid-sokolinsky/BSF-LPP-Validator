@@ -11,11 +11,8 @@ Author: Leonid B. Sokolinsky
 
 //=========================== Problem Parameters =========================
 #define PP_N 6												// n - Space dimension (n > 2)
-//#define PP_N 3											// n - Space dimension (n > 2)
-//#define PP_NUM_OF_NATURAL_INEQUALITIES 1					// Number of natural inequalities for model LPP
 #define PP_NUM_OF_NATURAL_INEQUALITIES (PP_N)				// Number of natural inequalities for random LPP
 #define PP_M (2*PP_N + PP_NUM_OF_NATURAL_INEQUALITIES + 1)	// m - Total number of inequalities
-//#define PP_D 8											// d - Density of points per 2-D sphere (d > 3)
 #define PP_D 12												// d - Density of points per 2-D sphere (d > 3)
 #define PP_K (PP_D*pow(PP_D/2 - 1,PP_N - 2))				// K - Total number of points on hypersphere (K < 2 147 483 647)
 #define PP_K_INT 7500										// Integer value of K
