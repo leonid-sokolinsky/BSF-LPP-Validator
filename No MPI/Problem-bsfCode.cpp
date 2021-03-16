@@ -16,47 +16,69 @@ using namespace std;
 void PC_bsf_Init(bool *success) {
 	FILE* stream;
 	float buf;
-	int m, n;
 
-	if (PP_K > (double)2147483647) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Total number of points on hypersphere PP_K = " << PP_K << " must be less than " << 2147483647 << ".\n";
-		*success = false; return;
-	}
-	if (PP_N < 3) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Dimension PP_N = " << PP_N << " must be greater than " << 2 << ".\n";
-		*success = false; return;
-	}
 	if (PP_D % 2 == 1) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Density PP_D = " << PP_D << " must be must be a even number!" << endl;
-		*success = false; return;
+		cout << "Density PP_D = " << PP_D << " must be must be a even number!" << endl;
+		*success = false;
+		system("pause");
+		return;
 	}
+
 	if (PP_D < 4) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Density PP_D = " << PP_D << " must be greater than " << 3 << ".\n";
-		*success = false; return;
+		cout << "Density PP_D = " << PP_D << " must be greater than " << 3 << ".\n";
+		*success = false;
+		system("pause");
+		return;
 	}
 
 	// ------------- Load LPP data -------------------
-	stream = fopen(PP_LPP_FILE, "r");
+	/*cout << "Enter LPP file name: ";
+	cin >> PD_lppFile;
+	const char* lppFile = PD_lppFile.c_str();/**/
+	const char* lppFile = "lpp.txt";
+		stream = fopen(lppFile, "r");
 	if (stream == NULL) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << PP_LPP_FILE << "'.\n";
-		*success = false; return;
-	}	
-
-	fscanf(stream, "%d%d", &m, &n);
-	if (n != PP_N || m != PP_M) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Error in input data '" << PP_LPP_FILE << "': PP_N != n and/or PP_M != m (PP_N = "
-			<< PP_N << ", n = " << n << "; PP_M = " << PP_M << ", m = " << m << ").\n";
-		*success = false; return;
+		cout << "Failure of opening file '" << lppFile << "'.\n";
+		*success = false;
+		system("pause");
+		return;
 	}
 
-	for (int i = 0; i < PP_M; i++) {
-		for (int j = 0; j < PP_N; j++) {
+	fscanf(stream, "%d%d", &PD_m, &PD_n);
+
+	if (PD_n > PP_MAX_N) {
+		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_MAX_N + 1 << "\n";
+		*success = false;
+		system("pause");
+		return;
+	}
+
+	if (PD_m > PP_MAX_M) {
+		cout << "Invalid input data: Number of inequalities m = " << PD_m << " must be < " << PP_MAX_M + 1 << "\n";
+		*success = false;
+		system("pause");
+		return;
+	}
+
+	if (PD_n < 3) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Dimension PD_n = " << PD_n << " must be greater than " << 2 << ".\n";
+		*success = false; 
+		system("pause");
+		return;
+	}
+
+	PD_K = (int)(PP_D * pow(PP_D / 2 - 1, PD_n - 2));
+
+	if (PD_K > PP_MAX_K) {
+		cout << "Invalid input data: Number of points on hypersphere K = " << PD_K << " must be < " << PP_MAX_K + 1 << "\n";
+		*success = false;
+		system("pause");
+		return;
+	}
+
+	for (int i = 0; i < PD_m; i++) {
+		for (int j = 0; j < PD_n; j++) {
 			fscanf(stream, "%f", &buf);
 			PD_A[i][j] = buf;
 		}
@@ -64,28 +86,33 @@ void PC_bsf_Init(bool *success) {
 		PD_b[i] = buf;
 	}
 
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		fscanf(stream, "%f", &buf);
 		PD_c[j] = buf;
 	}
 	fclose(stream);
 
 	// --------------- Load solution ---------------
-	stream = fopen(PP_SOLUTION_FILE, "r");
+	/*cout << "Enter solution file name: ";
+	cin >> PD_solutionFile;
+	const char* solutionFile = PD_solutionFile.c_str();/**/
+	const char* solutionFile = "solution.txt";
+	stream = fopen(solutionFile, "r");
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << PP_SOLUTION_FILE << "'.\n";
+			cout << "Failure of opening file '" << PD_solutionFile << "'.\n";
 		*success = false; return;
 	}
 
+	int n;
 	fscanf(stream, "%d", &n);
-	if (n != PP_N) {
+	if (n != PD_n) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Error in input data '" << PP_SOLUTION_FILE << "': PP_N != n (PP_N = " << PP_N << ", n = " << n << ").\n";
+			cout << "Error in input data '" << PD_solutionFile << "': PD_n != n (PD_n = " << PD_n << ", n = " << n << ").\n";
 		*success = false; return;
 	}
 
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		fscanf(stream, "%f", &buf);
 		PD_x[j] = buf;
 	}
@@ -94,13 +121,13 @@ void PC_bsf_Init(bool *success) {
 
 	/*if (BSF_sv_mpiRank == 0) {
 		int counter = 0;
-		for (int i = 0; i < PP_M; i++)
+		for (int i = 0; i < PD_m; i++)
 			if (!PointIn(PD_x, PD_A[i], PD_b[i])) {
 				cout << "\tPoint x = (";
-				for (int j = 0; j < PP_N; j++)
+				for (int j = 0; j < PD_n; j++)
 					cout << setw(PP_SETW) << PD_x[j];
 				cout << ") does not satisfies to the following inequality!: ";
-				for (int j = 0; j < PP_N; j++)
+				for (int j = 0; j < PD_n; j++)
 					cout << setw(PP_SETW) << PD_A[i][j];
 				cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
 				*success = false; return;
@@ -114,33 +141,29 @@ void PC_bsf_Init(bool *success) {
 }
 
 void PC_bsf_SetListSize(int *listSize) {
-	*listSize = (int)PP_K;
+	*listSize = (int)PD_K;
 }
 
 void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
 	// Nothing to do with stuff!
 }
 
-void PC_bsf_SetMapListElemMax(PT_bsf_mapElem_T* elem, int i) {
-	// Optional filling. Do not delete!
-}
-
 void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int *success) {	// For Job 0
 	static PT_vector_T p;	// Checkpoint coordinates
 	PT_float_T objF_p;
 
-	CheckPoint(p, BSF_sv_addressOffset * PP_N + BSF_sv_numberInSublist);
-	for (int j = 0; j < PP_N; j++)
+	CheckPoint(p, BSF_sv_addressOffset * PD_n + BSF_sv_numberInSublist);
+	for (int j = 0; j < PD_n; j++)
 		p[j] += PD_x[j];
 
 	/* Debug *//*
 	if (BSF_sv_mpiRank == 0) {
 		cout << "PC_bsf_MapF: ";
-		for (int j = 0; j < PP_N; j++) 
+		for (int j = 0; j < PD_n; j++) 
 			cout << setw(PP_SETW) << p[j];
 	} /* End debug */
 
-	for (int i = 0; i < PP_M; i++) {
+	for (int i = 0; i < PD_m; i++) {
 
 		/* Debug *//*
 		if (BSF_sv_mpiRank == 0)
@@ -267,8 +290,7 @@ void PC_bsf_JobDispatcher(
 }
 
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
-	cout << "=================================================== Problem parameters ====================================================" << endl;
-	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
+/*	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
 #ifdef PP_BSF_OMP
 #ifdef PP_BSF_NUM_THREADS
 	cout << "Number of Threads: " << PP_BSF_NUM_THREADS << endl;
@@ -279,28 +301,28 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "OpenMP is turned off!" << endl;
 #endif // PP_BSF_OMP
 
-	cout << "Dimension: N = " << PP_N << endl;
-	cout << "Number of Constraints: M = " << PP_M << endl;
+	cout << "Dimension: N = " << PD_n << endl;
+	cout << "Number of Constraints: M = " << PD_m << endl;
 	cout << "Density of Checkpoints per 2-D sphere: D = " << PP_D << endl;
-	cout << "Total Number of Checkpoints: K = " << PP_K << endl;
+	cout << "Total Number of Checkpoints: K = " << PD_K << endl;
 #ifdef PP_MATRIX_OUTPUT
 	cout << "------- Matrix A & Column b -------\n";
-	for (int i = 0; i < PP_M; i++) {
-		for (int j = 0; j < PP_N; j++)
+	for (int i = 0; i < PD_m; i++) {
+		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << PD_A[i][j];
 		cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
 	};
 #endif // PP_MATRIX_OUTPUT
 	
 	cout << "Objective Function: c = "; 
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_c[j];
-	cout << (PP_OUTPUT_LIMIT < PP_N ? "	..." : "") << endl;
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_c[j];
+	cout << (PP_OUTPUT_LIMIT < PD_n ? "	..." : "") << endl;
 	cout << "Solution to Check:  x = ";
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_x[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_x[PP_N - 1];
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_x[j];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_x[PD_n - 1];
 	cout << endl;
 	cout << "Value of Objective Function in Point x = " << PD_objF_x << endl;
-	cout << "-------------------------------------------" << endl;
+	cout << "-------------------------------------------" << endl;/**/
 }
 
 void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
@@ -333,17 +355,30 @@ void PC_bsf_IterOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter,
 
 void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter, double t) {	// For Job 0
 	cout << "=============================================" << endl;
-	cout << "Time: " << t << endl;
-	cout << "Points in polytope: " << round((double)reduceCounter*100 / (double)PP_K) << "%.\n";
-	if (PD_solutionIsOk)
+	cout << "Points in polytope: " << round((double)reduceCounter*100 / (double)PD_K) << "%.\n";
+	if (PD_solutionIsOk) {
 		cout << "The solution is correct!\n";
-	else {
+		// Copy trace.txt to *.trc
+		string fileName = to_string(PD_n) + "_" + to_string((int)PD_A[2 * PD_n + 1][0]);
+		ifstream inTraceFile("trace.txt");
+		PD_traceFile = fileName + ".trc";
+		const char* traceFile = PD_traceFile.c_str();
+		ofstream outTraceFile(traceFile);
+		outTraceFile << inTraceFile.rdbuf();
+		// Copy lpp.txt to *.lpp
+		ifstream inLppFile("lpp.txt");
+		PD_traceFile = fileName + ".lpp";
+		const char* lppFile = PD_traceFile.c_str();
+		ofstream outLppFile(lppFile);
+		outLppFile << inLppFile.rdbuf();
+	} else {
 		cout << "The solution is NOT correct!\n";
 		cout << "Correct solution:   p = ";
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_x[j];
-		if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_x[PP_N - 1];
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_x[j];
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_x[PD_n - 1];
 		cout << endl;
 	}
+	//system("pause");
 }
 
 void PC_bsf_ProblemOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
@@ -390,37 +425,37 @@ static void CheckPoint(PT_vector_T p, int k) {
 
 	p[0] = PP_RHO * cos(phi[0]); p[0] = CHECK_ZERO(p[0]);
 	if (fabs(p[0]) < PP_EPS_ZERO) p[0] = 0;
-	for (int j = 1; j < PP_N - 2; j++) {
+	for (int j = 1; j < PD_n - 2; j++) {
 		fac *= sin(phi[j - 1]);
 		p[j] = PP_RHO * cos(phi[j]) * fac; p[j] = CHECK_ZERO(p[j]);
 	}
 
-	fac *= sin(phi[PP_N - 3]);
-	p[PP_N - 2] = PP_RHO * sin(phi[PP_N - 2]) * fac; p[PP_N - 2] = CHECK_ZERO(p[PP_N - 2]);
-	p[PP_N - 1] = PP_RHO * cos(phi[PP_N - 2]) * fac; p[PP_N - 1] = CHECK_ZERO(p[PP_N - 1]);
+	fac *= sin(phi[PD_n - 3]);
+	p[PD_n - 2] = PP_RHO * sin(phi[PD_n - 2]) * fac; p[PD_n - 2] = CHECK_ZERO(p[PD_n - 2]);
+	p[PD_n - 1] = PP_RHO * cos(phi[PD_n - 2]) * fac; p[PD_n - 1] = CHECK_ZERO(p[PD_n - 1]);
 
 	/* Debug *//*
 	if (BSF_sv_mpiRank == 0) {
 		cout << "CheckPoint("<< k << "):";
-		for (int j = 0; j < PP_N; j++)
+		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << p[j];
 		//system("pause");
 	} /* End debug */
 }
 
 static void Angles(PT_angles_T phi, int k) {
-	int P = (int)pow(PP_D / 2 - 1,PP_N - 2);
+	int P = (int)pow(PP_D / 2 - 1,PD_n - 2);
 	PT_float_T fac = 6.283185307179586476925286766559 / PP_D;
-	int v[PP_N - 1];
+	int v[PP_MAX_N - 1];
 
-	v[PP_N - 2] = k / P;
+	v[PD_n - 2] = k / P;
 	k %= P;
-	for (int j = PP_N - 3; j > -1; j--) {
+	for (int j = PD_n - 3; j > -1; j--) {
 		P /= PP_D / 2 - 1;
 		v[j] = k / P + 1;
 		k %= P;
 	}
-	for (int j = 0; j < PP_N - 1; j++) {
+	for (int j = 0; j < PD_n - 1; j++) {
 		phi[j] = fac * (PT_float_T)(v[j]);
 	}
 }
@@ -436,19 +471,19 @@ inline bool PointIn(PT_vector_T x, PT_vector_T a, PT_float_T b) { // If the poin
 
 inline double Vector_DotProduct(PT_vector_T x, PT_vector_T y) {
 	double s = 0;
-	for (int j = 0; j < PP_N; j++)
+	for (int j = 0; j < PD_n; j++)
 		s += x[j] * y[j];
 	return s;
 }
 
 inline void Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint) { // toPoint = fromPoint
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		toPoint[j] = fromPoint[j];
 	}
 }
 
 inline void Vector_Subtraction(PT_vector_T x, PT_vector_T y, PT_vector_T z) {  // z = x - y
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		z[j] = x[j] - y[j];
 	}
 }
@@ -456,7 +491,7 @@ inline void Vector_Subtraction(PT_vector_T x, PT_vector_T y, PT_vector_T z) {  /
 inline double Vector_NormSquare(PT_vector_T x) {
 	double sum = 0;
 
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		sum += x[j] * x[j];
 	}
 	return sum;
@@ -464,7 +499,7 @@ inline double Vector_NormSquare(PT_vector_T x) {
 
 inline double ObjectiveF(PT_vector_T x) {
 	double s = 0;
-	for (int j = 0; j < PP_N; j++)
+	for (int j = 0; j < PD_n; j++)
 		s += PD_c[j] * x[j];
 	return s;
 }
