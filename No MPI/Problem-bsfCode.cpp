@@ -17,15 +17,15 @@ void PC_bsf_Init(bool *success) {
 	FILE* stream;
 	float buf;
 
-	if (PP_D % 2 == 1) {
-		cout << "Density PP_D = " << PP_D << " must be must be a even number!" << endl;
+	if (PP_D % 2 == 0) {
+		cout << "PP_D = " << PP_D << " must be a odd number!" << endl;
 		*success = false;
 		system("pause");
 		return;
 	}
 
-	if (PP_D < 4) {
-		cout << "Density PP_D = " << PP_D << " must be greater than " << 3 << ".\n";
+	if (PP_D < 3) {
+		cout << "PP_D = " << PP_D << " must be greater than " << 2 << ".\n";
 		*success = false;
 		system("pause");
 		return;
@@ -68,7 +68,7 @@ void PC_bsf_Init(bool *success) {
 		return;
 	}
 
-	PD_K = (int)(PP_D * pow(PP_D / 2 - 1, PD_n - 2));
+	PD_K = (int)(2 * PP_D * pow(PP_D - 1, PD_n - 2));
 
 	if (PD_K > PP_MAX_K) {
 		cout << "Invalid input data: Number of points on hypersphere K = " << PD_K << " must be < " << PP_MAX_K + 1 << "\n";
@@ -100,7 +100,7 @@ void PC_bsf_Init(bool *success) {
 	stream = fopen(solutionFile, "r");
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << PD_solutionFile << "'.\n";
+			cout << "Failure of opening file '" << solutionFile << "'.\n";
 		*success = false; return;
 	}
 
@@ -108,7 +108,7 @@ void PC_bsf_Init(bool *success) {
 	fscanf(stream, "%d", &n);
 	if (n != PD_n) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Error in input data '" << PD_solutionFile << "': PD_n != n (PD_n = " << PD_n << ", n = " << n << ").\n";
+			cout << "Error in input data '" << solutionFile << "': PD_n != n (PD_n = " << PD_n << ", n = " << n << ").\n";
 		*success = false; return;
 	}
 
@@ -180,7 +180,7 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 	}
 
 	objF_p = ObjectiveF(p);
-	if (objF_p < PD_objF_x)
+	if (objF_p < PD_objF_x + PP_EPS_OBJECTIVE)
 		reduceElem->ok = true;
 	else {
 		reduceElem->ok = false;
@@ -359,7 +359,9 @@ void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, 
 	if (PD_solutionIsOk) {
 		cout << "The solution is correct!\n";
 		// Copy trace.txt to *.trc
-		string fileName = to_string(PD_n) + "_" + to_string((int)PD_A[2 * PD_n + 1][0]);
+		string fileName = to_string(PD_n) + "_" + to_string((int)fabs(PD_A[2 * PD_n + 1][0])) 
+												+ to_string((int)fabs(PD_A[2 * PD_n + 1][1])) 
+												+ to_string((int)fabs(PD_A[2 * PD_n + 1][2]));
 		ifstream inTraceFile("trace.txt");
 		PD_traceFile = fileName + ".trc";
 		const char* traceFile = PD_traceFile.c_str();
@@ -377,6 +379,7 @@ void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, 
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_x[j];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_x[PD_n - 1];
 		cout << endl;
+		system("pause");
 	}
 	//system("pause");
 }
@@ -420,43 +423,42 @@ static void CheckPoint(PT_vector_T p, int k) {
 	static PT_angles_T phi;	// Checkpoint angles in the radial coordinate system
 	PT_float_T fac = 1;
 
-#define CHECK_ZERO(x) 	(fabs(x)>PP_EPS_ZERO?x:0)	
 	Angles(phi, k);
 
-	p[0] = PP_RHO * cos(phi[0]); p[0] = CHECK_ZERO(p[0]);
-	if (fabs(p[0]) < PP_EPS_ZERO) p[0] = 0;
+	p[0] = PP_RHO * cos(phi[0]);
 	for (int j = 1; j < PD_n - 2; j++) {
 		fac *= sin(phi[j - 1]);
-		p[j] = PP_RHO * cos(phi[j]) * fac; p[j] = CHECK_ZERO(p[j]);
+		p[j] = PP_RHO * cos(phi[j]) * fac;
 	}
 
 	fac *= sin(phi[PD_n - 3]);
-	p[PD_n - 2] = PP_RHO * sin(phi[PD_n - 2]) * fac; p[PD_n - 2] = CHECK_ZERO(p[PD_n - 2]);
-	p[PD_n - 1] = PP_RHO * cos(phi[PD_n - 2]) * fac; p[PD_n - 1] = CHECK_ZERO(p[PD_n - 1]);
+	p[PD_n - 2] = PP_RHO * sin(phi[PD_n - 2]) * fac;
+	p[PD_n - 1] = PP_RHO * cos(phi[PD_n - 2]) * fac;
 
 	/* Debug *//*
 	if (BSF_sv_mpiRank == 0) {
 		cout << "CheckPoint("<< k << "):";
 		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << p[j];
-		//system("pause");
+		system("pause");
 	} /* End debug */
 }
 
 static void Angles(PT_angles_T phi, int k) {
-	int P = (int)pow(PP_D / 2 - 1,PD_n - 2);
-	PT_float_T fac = 6.283185307179586476925286766559 / PP_D;
-	int v[PP_MAX_N - 1];
+	int P = (int)pow(PP_D - 1,PD_n - 2);
+	PT_float_T varphi = 3.1415926536 / PP_D;
+	int u[PP_MAX_N];
 
-	v[PD_n - 2] = k / P;
+	u[PD_n - 2] = k / P;
+	u[PD_n - 1] = u[PD_n - 2];
 	k %= P;
-	for (int j = PD_n - 3; j > -1; j--) {
-		P /= PP_D / 2 - 1;
-		v[j] = k / P + 1;
+	for (int j = PD_n - 3; j >= 0; j--) {
+		P /= PP_D - 1;
+		u[j] = k / P + 1;
 		k %= P;
 	}
 	for (int j = 0; j < PD_n - 1; j++) {
-		phi[j] = fac * (PT_float_T)(v[j]);
+		phi[j] = varphi * (PT_float_T)(u[j]);
 	}
 }
 

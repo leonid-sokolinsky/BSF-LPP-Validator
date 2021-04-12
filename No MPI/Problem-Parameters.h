@@ -6,16 +6,14 @@ Prefix: PP
 Author: Leonid B. Sokolinsky
 ==============================================================================*/
 
-//-------------------------- Compilation Modes -----------------------
-#define PP_DEBUG
-
 //=========================== Problem Parameters =========================
-#define PP_MAX_N 10											// Maximal Space Dimension
+#define PP_MAX_N 50											// Maximal Space Dimension
 #define PP_MAX_M (3 * PP_MAX_N + 1)							// Maximal number of inequalities
-#define PP_D 10												// d - Density of points per 2-D sphere (d > 3)
+#define PP_D 11												// d - number of parallels excluding poles (d > 2, d is a odd number)
 #define PP_MAX_K 655360										// Integer value of K
 #define PP_RHO	1											// Radius of verification hypersphere (vicinity of solution)
 #define PP_EPS_ZERO 1E-9									// Precision of the comparison with zero
+#define PP_EPS_OBJECTIVE 1E-6								// Precision of the comparison of the objective function values
 /*------------ begin of file -------------
 m n
 A_11 A_12 ... A_1n b_1

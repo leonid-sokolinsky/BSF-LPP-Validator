@@ -13,4 +13,4 @@ typedef double		PT_float_T;
 typedef PT_float_T	PT_vector_T[PP_MAX_N];
 typedef PT_float_T	PT_matrix_T[PP_MAX_M][PP_MAX_N];
 typedef PT_float_T	PT_column_T[PP_MAX_M];
-typedef PT_float_T	PT_angles_T[PP_MAX_N - 1];
+typedef PT_float_T	PT_angles_T[PP_MAX_N];

@@ -7,17 +7,18 @@ Author: Leonid B. Sokolinsky
 ==============================================================================*/
 
 //-------------------------- Compilation Modes -----------------------
-#define PP_DEBUG
+//#define PP_DEBUG
 
 //=========================== Problem Parameters =========================
-#define PP_N 4												// n - Space dimension (n > 2)
-#define PP_NUM_OF_NATURAL_INEQUALITIES (PP_N)				// Number of natural inequalities for random LPP
-#define PP_M (2*PP_N + PP_NUM_OF_NATURAL_INEQUALITIES + 1)	// m - Total number of inequalities
-#define PP_D 12												// d - Density of points per 2-D sphere (d > 3)
-#define PP_K (PP_D*pow(PP_D/2 - 1,PP_N - 2))				// K - Total number of points on hypersphere (K < 2 147 483 647)
+#define PP_N 5												// n - Space dimension (n > 2)
+#define PP_NUM_OF_RND_INEQUALITIES (PP_N)					// Number of random inequalities
+#define PP_M (2*PP_N + PP_NUM_OF_RND_INEQUALITIES + 1)		// m - Total number of inequalities
+#define PP_D 17												// d - number of parallels excluding poles (d > 2, d is a odd number)
+#define PP_K (int)(2*PP_D*pow(PP_D - 1,PP_N - 2))				// K - Total number of points on hypersphere (K < 2 147 483 647)
 #define PP_RHO	1											// Radius of verification hypersphere (vicinity of solution)
 #define PP_EPS_ZERO 1E-9									// Precision of the comparison with zero
-#define PP_LPP_FILE "C:/TEMP/lpp-1.txt"			// LPP data file in the following format:
+#define PP_EPS_OBJECTIVE 1E-6								// Precision of the comparison of the objective function values
+#define PP_LPP_FILE "lpp.txt"			// LPP data file in the following format:
 /*------------ begin of file -------------
 m n
 A_11 A_12 ... A_1n b_1
@@ -27,7 +28,7 @@ A_m1 A_m2 ... A_mn b_m
 c_1 c_2 ... c_n
 ------------ end of file----------------*/
 
-#define PP_SOLUTION_FILE "C:/TEMP/Solution-1.txt" // LPP solution file in the following format:
+#define PP_SOLUTION_FILE "solution.txt" // LPP solution file in the following format:
 /*
 ------------ begin of file -------------
 n

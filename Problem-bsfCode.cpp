@@ -15,10 +15,9 @@ using namespace std;
 //----------------------- Predefined problem-dependent functions -----------------
 void PC_bsf_Init(bool *success) {
 	FILE* stream;
-	float buf;
-	int m, n;
+	float buf; int m, n;
 
-	if (PP_K > (double)2147483647) {
+	if (PP_K > 2147483647) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "Total number of points on hypersphere PP_K = " << PP_K << " must be less than " << 2147483647 << ".\n";
 		*success = false; return;
@@ -28,14 +27,14 @@ void PC_bsf_Init(bool *success) {
 			cout << "Dimension PP_N = " << PP_N << " must be greater than " << 2 << ".\n";
 		*success = false; return;
 	}
-	if (PP_D % 2 == 1) {
+	if (PP_D % 2 == 0) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Density PP_D = " << PP_D << " must be must be a even number!" << endl;
+			cout << "Density PP_D = " << PP_D << " must be must be a odd number!" << endl;
 		*success = false; return;
 	}
-	if (PP_D < 4) {
+	if (PP_D < 3) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Density PP_D = " << PP_D << " must be greater than " << 3 << ".\n";
+			cout << "Density PP_D = " << PP_D << " must be greater than " << 2 << ".\n";
 		*success = false; return;
 	}
 
@@ -121,10 +120,6 @@ void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* pa
 	// Nothing to do with stuff!
 }
 
-void PC_bsf_SetMapListElemMax(PT_bsf_mapElem_T* elem, int i) {
-	// Optional filling. Do not delete!
-}
-
 void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int *success) {	// For Job 0
 	static PT_vector_T p;	// Checkpoint coordinates
 	PT_float_T objF_p;
@@ -157,7 +152,7 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 	}
 
 	objF_p = ObjectiveF(p);
-	if (objF_p < PD_objF_x)
+	if (objF_p < PD_objF_x + PP_EPS_OBJECTIVE)
 		reduceElem->ok = true;
 	else {
 		reduceElem->ok = false;
@@ -307,7 +302,6 @@ void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_
 	double elapsedTime, int jobCase) {	// For Job 0
 	cout << "------------------ " << BSF_sv_iterCounter << " ------------------" << endl;
 
-
 }
 
 void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
@@ -385,19 +379,17 @@ static void CheckPoint(PT_vector_T p, int k) {
 	static PT_angles_T phi;	// Checkpoint angles in the radial coordinate system
 	PT_float_T fac = 1;
 
-#define CHECK_ZERO(x) 	(fabs(x)>PP_EPS_ZERO?x:0)	
 	Angles(phi, k);
 
-	p[0] = PP_RHO * cos(phi[0]); p[0] = CHECK_ZERO(p[0]);
-	if (fabs(p[0]) < PP_EPS_ZERO) p[0] = 0;
+	p[0] = PP_RHO * cos(phi[0]);
 	for (int j = 1; j < PP_N - 2; j++) {
 		fac *= sin(phi[j - 1]);
-		p[j] = PP_RHO * cos(phi[j]) * fac; p[j] = CHECK_ZERO(p[j]);
+		p[j] = PP_RHO * cos(phi[j]) * fac;
 	}
 
 	fac *= sin(phi[PP_N - 3]);
-	p[PP_N - 2] = PP_RHO * sin(phi[PP_N - 2]) * fac; p[PP_N - 2] = CHECK_ZERO(p[PP_N - 2]);
-	p[PP_N - 1] = PP_RHO * cos(phi[PP_N - 2]) * fac; p[PP_N - 1] = CHECK_ZERO(p[PP_N - 1]);
+	p[PP_N - 2] = PP_RHO * sin(phi[PP_N - 2]) * fac;
+	p[PP_N - 1] = PP_RHO * cos(phi[PP_N - 2]) * fac;
 
 	/* Debug *//*
 	if (BSF_sv_mpiRank == 0) {
@@ -409,19 +401,20 @@ static void CheckPoint(PT_vector_T p, int k) {
 }
 
 static void Angles(PT_angles_T phi, int k) {
-	int P = (int)pow(PP_D / 2 - 1,PP_N - 2);
-	PT_float_T fac = 6.283185307179586476925286766559 / PP_D;
-	int v[PP_N - 1];
+	int P = (int)pow(PP_D - 1,PP_N - 2);
+	PT_float_T varphi = 3.1415926536 / PP_D;
+	int u[PP_N];
 
-	v[PP_N - 2] = k / P;
+	u[PP_N - 2] = k / P;
+	u[PP_N - 1] = u[PP_N - 2];
 	k %= P;
-	for (int j = PP_N - 3; j > -1; j--) {
-		P /= PP_D / 2 - 1;
-		v[j] = k / P + 1;
+	for (int j = PP_N - 3; j >= 0; j--) {
+		P /= PP_D - 1;
+		u[j] = k / P + 1;
 		k %= P;
 	}
 	for (int j = 0; j < PP_N - 1; j++) {
-		phi[j] = fac * (PT_float_T)(v[j]);
+		phi[j] = varphi * (PT_float_T)(u[j]);
 	}
 }
 
