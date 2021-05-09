@@ -39,4 +39,7 @@ static string PD_solutionFile;/* LPP solution file in the following format:
 n
 x_1 x_2 ... x_n
 ------------ end of file----------------*/
-static string PD_traceFile;
+static string PD_inTraceFile;
+static string PD_outTraceFile;
+static string PD_inLppFile;
+static string PD_outLppFile;

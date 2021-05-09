@@ -33,9 +33,11 @@ void PC_bsf_Init(bool *success) {
 
 	// ------------- Load LPP data -------------------
 	/*cout << "Enter LPP file name: ";
-	cin >> PD_lppFile;
-	const char* lppFile = PD_lppFile.c_str();/**/
-	const char* lppFile = "lpp.txt";
+	cin >> PD_lppFile;/**/
+	PD_lppFile = PP_PATH;
+	PD_lppFile += "lpp.txt";
+	const char* lppFile = PD_lppFile.c_str();
+	//const char* lppFile = "lpp.txt";
 		stream = fopen(lppFile, "r");
 	if (stream == NULL) {
 		cout << "Failure of opening file '" << lppFile << "'.\n";
@@ -44,7 +46,7 @@ void PC_bsf_Init(bool *success) {
 		return;
 	}
 
-	fscanf(stream, "%d%d", &PD_m, &PD_n);
+	if (fscanf(stream, "%d%d", &PD_m, &PD_n) == 0) cout << "Unexpected end of file" << endl;
 
 	if (PD_n > PP_MAX_N) {
 		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_MAX_N + 1 << "\n";
@@ -79,24 +81,26 @@ void PC_bsf_Init(bool *success) {
 
 	for (int i = 0; i < PD_m; i++) {
 		for (int j = 0; j < PD_n; j++) {
-			fscanf(stream, "%f", &buf);
+			if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
 			PD_A[i][j] = buf;
 		}
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
 		PD_b[i] = buf;
 	}
 
 	for (int j = 0; j < PD_n; j++) {
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
 		PD_c[j] = buf;
 	}
 	fclose(stream);
 
 	// --------------- Load solution ---------------
 	/*cout << "Enter solution file name: ";
-	cin >> PD_solutionFile;
-	const char* solutionFile = PD_solutionFile.c_str();/**/
-	const char* solutionFile = "solution.txt";
+	cin >> PD_solutionFile;/**/
+	PD_solutionFile = PP_PATH;
+	PD_solutionFile += "solution.txt";
+	const char* solutionFile = PD_solutionFile.c_str();
+	//const char* solutionFile = "solution.txt";
 	stream = fopen(solutionFile, "r");
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
@@ -105,7 +109,7 @@ void PC_bsf_Init(bool *success) {
 	}
 
 	int n;
-	fscanf(stream, "%d", &n);
+	if (fscanf(stream, "%d", &n) == 0) cout << "Unexpected end of file" << endl;
 	if (n != PD_n) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "Error in input data '" << solutionFile << "': PD_n != n (PD_n = " << PD_n << ", n = " << n << ").\n";
@@ -113,7 +117,7 @@ void PC_bsf_Init(bool *success) {
 	}
 
 	for (int j = 0; j < PD_n; j++) {
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
 		PD_x[j] = buf;
 	}
 
@@ -357,21 +361,30 @@ void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, 
 	cout << "=============================================" << endl;
 	cout << "Points in polytope: " << round((double)reduceCounter*100 / (double)PD_K) << "%.\n";
 	if (PD_solutionIsOk) {
+		const char* char_File;
+
 		cout << "The solution is correct!\n";
 		// Copy trace.txt to *.trc
 		string fileName = to_string(PD_n) + "_" + to_string((int)fabs(PD_A[2 * PD_n + 1][0])) 
 												+ to_string((int)fabs(PD_A[2 * PD_n + 1][1])) 
 												+ to_string((int)fabs(PD_A[2 * PD_n + 1][2]));
-		ifstream inTraceFile("trace.txt");
-		PD_traceFile = fileName + ".trc";
-		const char* traceFile = PD_traceFile.c_str();
-		ofstream outTraceFile(traceFile);
+		PD_inTraceFile = PP_PATH;
+		PD_inTraceFile += "trace.txt";
+		char_File = PD_inTraceFile.c_str();
+		ifstream inTraceFile(char_File);
+		PD_outTraceFile = PP_PATH;
+		PD_outTraceFile += fileName + ".trc";
+		char_File = PD_outTraceFile.c_str();
+		ofstream outTraceFile(char_File);
 		outTraceFile << inTraceFile.rdbuf();
-		// Copy lpp.txt to *.lpp
-		ifstream inLppFile("lpp.txt");
-		PD_traceFile = fileName + ".lpp";
-		const char* lppFile = PD_traceFile.c_str();
-		ofstream outLppFile(lppFile);
+		PD_inLppFile = PP_PATH;
+		PD_inLppFile += "lpp.txt";
+		char_File = PD_inLppFile.c_str();
+		ifstream inLppFile(char_File);
+		PD_outLppFile = PP_PATH;
+		PD_outLppFile += fileName + ".lpp";
+		char_File = PD_outLppFile.c_str();
+		ofstream outLppFile(char_File);
 		outLppFile << inLppFile.rdbuf();
 	} else {
 		cout << "The solution is NOT correct!\n";
