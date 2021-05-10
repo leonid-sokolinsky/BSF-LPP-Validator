@@ -12,6 +12,3 @@ Author: Leonid B. Sokolinsky
 //#define PP_BSF_ITER_OUTPUT		// If it is defined then Iteration Output is performed
 #define PP_BSF_TRACE_COUNT 1		// Each PP_BSF_TRACE_COUNT-th iteration to be outputted
 #define PP_BSF_MAX_JOB_CASE 0		// Defines the maximum number of activities (jobs) in workflow minus 1
-//--------------------------- OpenMP Parameters ---------------------------
-//#define PP_BSF_OMP				// If PP_BSF_OMP is defined then OpenMP is turned on for Map Step
-//#define PP_BSF_NUM_THREADS 12		// If PP_BSF_NUM_THREADS is udefined then all accessable threads are used
