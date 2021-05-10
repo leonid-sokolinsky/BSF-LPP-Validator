@@ -46,7 +46,7 @@ void PC_bsf_Init(bool *success) {
 		return;
 	}
 
-	if (fscanf(stream, "%d%d", &PD_m, &PD_n) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
+	if (fscanf(stream, "%d%d", &PD_m, &PD_n) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
 
 	if (PD_n > PP_MAX_N) {
 		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_MAX_N + 1 << "\n";
@@ -81,15 +81,15 @@ void PC_bsf_Init(bool *success) {
 
 	for (int i = 0; i < PD_m; i++) {
 		for (int j = 0; j < PD_n; j++) {
-			if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
+			if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
 			PD_A[i][j] = buf;
 		}
-		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
+		if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
 		PD_b[i] = buf;
 	}
 
 	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
+		if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
 		PD_c[j] = buf;
 	}
 	fclose(stream);
@@ -109,7 +109,7 @@ void PC_bsf_Init(bool *success) {
 	}
 
 	int n;
-	if (fscanf(stream, "%d", &n) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
+	if (fscanf(stream, "%d", &n) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
 	if (n != PD_n) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "Error in input data '" << solutionFile << "': PD_n != n (PD_n = " << PD_n << ", n = " << n << ").\n";
@@ -117,7 +117,7 @@ void PC_bsf_Init(bool *success) {
 	}
 
 	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
+		if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
 		PD_x[j] = buf;
 	}
 
