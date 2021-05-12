@@ -22,7 +22,6 @@ static PT_vector_T PD_c;	// Coefficients of the objective function <c,x>
 static PT_vector_T PD_x;	// Solution to check
 static PT_vector_T PD_pMax;	// Correct solution if PD_x failed
 static PT_vector_T PD_p;	// Current approximation
-
 //========================== Files ================================================
 static string PD_lppFile; /* LPP file in the following format:
 ------------ begin of file -------------

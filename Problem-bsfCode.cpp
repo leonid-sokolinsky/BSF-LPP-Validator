@@ -18,8 +18,10 @@ void PC_bsf_Init(bool *success) {
 	float buf; int m, n;
 
 	if (PP_K > 2147483647) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Total number of points on hypersphere PP_K = " << PP_K << " must be less than " << 2147483647 << ".\n";
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster) {
+			cout << "Total number of points on hypersphere PP_K = " << (int)PP_K << " must be less than " << 2147483647 << ".\n";
+			cout << "You need to decrease the PP_D parameter in Problem-Parameters.h" << endl;
+		}
 		*success = false; return;
 	}
 	if (PP_N < 3) {
@@ -39,14 +41,20 @@ void PC_bsf_Init(bool *success) {
 	}
 
 	// ------------- Load LPP data -------------------
-	stream = fopen(PP_LPP_FILE, "r");
+
+
+	PD_lppFile = PP_PATH;
+	PD_lppFile += PP_LPP_FILE;
+	const char* lppFile = PD_lppFile.c_str();
+	stream = fopen(lppFile, "r");
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "Failure of opening file '" << PP_LPP_FILE << "'.\n";
 		*success = false; return;
 	}	
 
-	fscanf(stream, "%d%d", &m, &n);
+	if (fscanf(stream, "%d%d", &m, &n) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return;	}
+
 	if (n != PP_N || m != PP_M) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "Error in input data '" << PP_LPP_FILE << "': PP_N != n and/or PP_M != m (PP_N = "
@@ -56,28 +64,31 @@ void PC_bsf_Init(bool *success) {
 
 	for (int i = 0; i < PP_M; i++) {
 		for (int j = 0; j < PP_N; j++) {
-			fscanf(stream, "%f", &buf);
+			if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; }
 			PD_A[i][j] = buf;
 		}
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; }
 		PD_b[i] = buf;
 	}
 
 	for (int j = 0; j < PP_N; j++) {
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; }
 		PD_c[j] = buf;
 	}
 	fclose(stream);
 
 	// --------------- Load solution ---------------
-	stream = fopen(PP_SOLUTION_FILE, "r");
+	PD_solutionFile = PP_PATH;
+	PD_solutionFile += PP_SOLUTION_FILE;
+	const char* solutionFile = PD_solutionFile.c_str();
+	stream = fopen(solutionFile, "r");
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "Failure of opening file '" << PP_SOLUTION_FILE << "'.\n";
 		*success = false; return;
 	}
 
-	fscanf(stream, "%d", &n);
+	if (fscanf(stream, "%d", &n) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; }
 	if (n != PP_N) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "Error in input data '" << PP_SOLUTION_FILE << "': PP_N != n (PP_N = " << PP_N << ", n = " << n << ").\n";
@@ -85,26 +96,11 @@ void PC_bsf_Init(bool *success) {
 	}
 
 	for (int j = 0; j < PP_N; j++) {
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; }
 		PD_x[j] = buf;
 	}
 
 	fclose(stream);
-
-	/*if (BSF_sv_mpiRank == 0) {
-		int counter = 0;
-		for (int i = 0; i < PP_M; i++)
-			if (!PointIn(PD_x, PD_A[i], PD_b[i])) {
-				cout << "\tPoint x = (";
-				for (int j = 0; j < PP_N; j++)
-					cout << setw(PP_SETW) << PD_x[j];
-				cout << ") does not satisfies to the following inequality!: ";
-				for (int j = 0; j < PP_N; j++)
-					cout << setw(PP_SETW) << PD_A[i][j];
-				cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
-				*success = false; return;
-			}
-	}/**/
 
 	PD_objF_x = ObjectiveF(PD_x);
 	Vector_Copy(PD_x, PD_p);
@@ -213,7 +209,7 @@ void PC_bsf_ProcessResults(		// For Job 0
 		}
 	}
 
-	double diff = fabs(PD_objF_pMax - PD_objF_x);
+	PT_float_T diff = fabs(PD_objF_pMax - PD_objF_x);
 	if (diff < PP_EPS_ZERO) {
 		*exit = true;
 		return;
@@ -277,7 +273,7 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "Dimension: N = " << PP_N << endl;
 	cout << "Number of Constraints: M = " << PP_M << endl;
 	cout << "Density of Checkpoints per 2-D sphere: D = " << PP_D << endl;
-	cout << "Total Number of Checkpoints: K = " << PP_K << endl;
+	cout << "Total Number of Checkpoints: K = " << (int)PP_K << endl;
 #ifdef PP_MATRIX_OUTPUT
 	cout << "------- Matrix A & Column b -------\n";
 	for (int i = 0; i < PP_M; i++) {
@@ -328,7 +324,7 @@ void PC_bsf_IterOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter,
 void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter, double t) {	// For Job 0
 	cout << "=============================================" << endl;
 	cout << "Time: " << t << endl;
-	cout << "Points in polytope: " << round((double)reduceCounter*100 / (double)PP_K) << "%.\n";
+	cout << "Points in polytope: " << round((PT_float_T)reduceCounter*100 / PP_K) << "%.\n";
 	if (PD_solutionIsOk)
 		cout << "The solution is correct!\n";
 	else {
@@ -427,8 +423,8 @@ inline bool PointIn(PT_vector_T x, PT_vector_T a, PT_float_T b) { // If the poin
 		return false;
 }
 
-inline double Vector_DotProduct(PT_vector_T x, PT_vector_T y) {
-	double s = 0;
+inline PT_float_T Vector_DotProduct(PT_vector_T x, PT_vector_T y) {
+	PT_float_T s = 0;
 	for (int j = 0; j < PP_N; j++)
 		s += x[j] * y[j];
 	return s;
@@ -446,8 +442,8 @@ inline void Vector_Subtraction(PT_vector_T x, PT_vector_T y, PT_vector_T z) {  /
 	}
 }
 
-inline double Vector_NormSquare(PT_vector_T x) {
-	double sum = 0;
+inline PT_float_T Vector_NormSquare(PT_vector_T x) {
+	PT_float_T sum = 0;
 
 	for (int j = 0; j < PP_N; j++) {
 		sum += x[j] * x[j];
@@ -455,8 +451,8 @@ inline double Vector_NormSquare(PT_vector_T x) {
 	return sum;
 }
 
-inline double ObjectiveF(PT_vector_T x) {
-	double s = 0;
+inline PT_float_T ObjectiveF(PT_vector_T x) {
+	PT_float_T s = 0;
 	for (int j = 0; j < PP_N; j++)
 		s += PD_c[j] * x[j];
 	return s;

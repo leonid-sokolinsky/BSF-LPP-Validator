@@ -15,7 +15,7 @@ using namespace std;
 //----------------------- Predefined problem-dependent functions -----------------
 void PC_bsf_Init(bool *success) {
 	FILE* stream;
-	float buf;
+	float buf; int n;
 
 	if (PP_D % 2 == 0) {
 		cout << "PP_D = " << PP_D << " must be a odd number!" << endl;
@@ -32,13 +32,12 @@ void PC_bsf_Init(bool *success) {
 	}
 
 	// ------------- Load LPP data -------------------
-	/*cout << "Enter LPP file name: ";
-	cin >> PD_lppFile;/**/
+								/*cout << "Enter LPP file name: ";
+								cin >> PD_lppFile;/**/
 	PD_lppFile = PP_PATH;
-	PD_lppFile += "lpp.txt";
+	PD_lppFile += PP_LPP_FILE;
 	const char* lppFile = PD_lppFile.c_str();
-	//const char* lppFile = "lpp.txt";
-		stream = fopen(lppFile, "r");
+	stream = fopen(lppFile, "r");
 	if (stream == NULL) {
 		cout << "Failure of opening file '" << lppFile << "'.\n";
 		*success = false;
@@ -74,6 +73,7 @@ void PC_bsf_Init(bool *success) {
 
 	if (PD_K > PP_MAX_K) {
 		cout << "Invalid input data: Number of points on hypersphere K = " << PD_K << " must be < " << PP_MAX_K + 1 << "\n";
+		cout << "You need to decrease the PP_D parameter in Problem-Parameters.h" << endl;
 		*success = false;
 		system("pause");
 		return;
@@ -95,12 +95,9 @@ void PC_bsf_Init(bool *success) {
 	fclose(stream);
 
 	// --------------- Load solution ---------------
-	/*cout << "Enter solution file name: ";
-	cin >> PD_solutionFile;/**/
 	PD_solutionFile = PP_PATH;
-	PD_solutionFile += "solution.txt";
+	PD_solutionFile += PP_SOLUTION_FILE;
 	const char* solutionFile = PD_solutionFile.c_str();
-	//const char* solutionFile = "solution.txt";
 	stream = fopen(solutionFile, "r");
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
@@ -108,7 +105,6 @@ void PC_bsf_Init(bool *success) {
 		*success = false; return;
 	}
 
-	int n;
 	if (fscanf(stream, "%d", &n) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
 	if (n != PD_n) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
@@ -123,25 +119,12 @@ void PC_bsf_Init(bool *success) {
 
 	fclose(stream);
 
-	/*if (BSF_sv_mpiRank == 0) {
-		int counter = 0;
-		for (int i = 0; i < PD_m; i++)
-			if (!PointIn(PD_x, PD_A[i], PD_b[i])) {
-				cout << "\tPoint x = (";
-				for (int j = 0; j < PD_n; j++)
-					cout << setw(PP_SETW) << PD_x[j];
-				cout << ") does not satisfies to the following inequality!: ";
-				for (int j = 0; j < PD_n; j++)
-					cout << setw(PP_SETW) << PD_A[i][j];
-				cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
-				*success = false; return;
-			}
-	}/**/
-
 	PD_objF_x = ObjectiveF(PD_x);
 	Vector_Copy(PD_x, PD_p);
 
 	*success = true;
+
+	cout << "The calculations have started, please wait..." << endl;
 }
 
 void PC_bsf_SetListSize(int *listSize) {
@@ -245,7 +228,7 @@ void PC_bsf_ProcessResults(		// For Job 0
 		}
 	}
 
-	double diff = fabs(PD_objF_pMax - PD_objF_x);
+	PT_float_T diff = fabs(PD_objF_pMax - PD_objF_x);
 	if (diff < PP_EPS_ZERO) {
 		*exit = true;
 		return;
@@ -294,7 +277,8 @@ void PC_bsf_JobDispatcher(
 }
 
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
-/*	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
+	/*cout << "=================================================== Problem parameters ====================================================" << endl;
+	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
 #ifdef PP_BSF_OMP
 #ifdef PP_BSF_NUM_THREADS
 	cout << "Number of Threads: " << PP_BSF_NUM_THREADS << endl;
@@ -333,7 +317,6 @@ void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_
 	double elapsedTime, int jobCase) {	// For Job 0
 	cout << "------------------ " << BSF_sv_iterCounter << " ------------------" << endl;
 
-
 }
 
 void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
@@ -359,7 +342,7 @@ void PC_bsf_IterOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter,
 
 void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter, double t) {	// For Job 0
 	cout << "=============================================" << endl;
-	cout << "Points in polytope: " << round((double)reduceCounter*100 / (double)PD_K) << "%.\n";
+	cout << "Points in polytope: " << round((PT_float_T)reduceCounter*100 / (PT_float_T)PD_K) << "%.\n";
 	if (PD_solutionIsOk) {
 		const char* char_File;
 
@@ -369,7 +352,7 @@ void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, 
 												+ to_string((int)fabs(PD_A[2 * PD_n + 1][1])) 
 												+ to_string((int)fabs(PD_A[2 * PD_n + 1][2]));
 		PD_inTraceFile = PP_PATH;
-		PD_inTraceFile += "trace.txt";
+		PD_inTraceFile += PP_TRACE_FILE;
 		char_File = PD_inTraceFile.c_str();
 		ifstream inTraceFile(char_File);
 		PD_outTraceFile = PP_PATH;
@@ -378,7 +361,7 @@ void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, 
 		ofstream outTraceFile(char_File);
 		outTraceFile << inTraceFile.rdbuf();
 		PD_inLppFile = PP_PATH;
-		PD_inLppFile += "lpp.txt";
+		PD_inLppFile += PP_LPP_FILE;
 		char_File = PD_inLppFile.c_str();
 		ifstream inLppFile(char_File);
 		PD_outLppFile = PP_PATH;
@@ -484,8 +467,8 @@ inline bool PointIn(PT_vector_T x, PT_vector_T a, PT_float_T b) { // If the poin
 		return false;
 }
 
-inline double Vector_DotProduct(PT_vector_T x, PT_vector_T y) {
-	double s = 0;
+inline PT_float_T Vector_DotProduct(PT_vector_T x, PT_vector_T y) {
+	PT_float_T s = 0;
 	for (int j = 0; j < PD_n; j++)
 		s += x[j] * y[j];
 	return s;
@@ -503,8 +486,8 @@ inline void Vector_Subtraction(PT_vector_T x, PT_vector_T y, PT_vector_T z) {  /
 	}
 }
 
-inline double Vector_NormSquare(PT_vector_T x) {
-	double sum = 0;
+inline PT_float_T Vector_NormSquare(PT_vector_T x) {
+	PT_float_T sum = 0;
 
 	for (int j = 0; j < PD_n; j++) {
 		sum += x[j] * x[j];
@@ -512,8 +495,8 @@ inline double Vector_NormSquare(PT_vector_T x) {
 	return sum;
 }
 
-inline double ObjectiveF(PT_vector_T x) {
-	double s = 0;
+inline PT_float_T ObjectiveF(PT_vector_T x) {
+	PT_float_T s = 0;
 	for (int j = 0; j < PD_n; j++)
 		s += PD_c[j] * x[j];
 	return s;
