@@ -1,5 +1,5 @@
 /*==============================================================================
-Project: LiFe
+Project: VaLiPro
 Theme: LPP Solution Validator
 Module: BSF-Include.h (Problem Independent "Include" Files)
 Author: Leonid B. Sokolinsky 

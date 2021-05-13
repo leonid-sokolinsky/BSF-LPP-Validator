@@ -1,5 +1,5 @@
 /*==============================================================================
-Project: LiFe
+Project: VaLiPro
 Theme: LPP Solution Validator
 Module: BSF-ProblemFunctions.h (Predefined Problem Function Forwards)
 Author: Leonid B. Sokolinsky

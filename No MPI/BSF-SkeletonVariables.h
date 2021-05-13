@@ -1,5 +1,5 @@
 /*==============================================================================
-Project: LiFe
+Project: VaLiPro
 Theme: LPP Solution Validator
 Module: BSF-SceletonVariables.h (Skeleton Variables)
 Prefix: BSF_sv

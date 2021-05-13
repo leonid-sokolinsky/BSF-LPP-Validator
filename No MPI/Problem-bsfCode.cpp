@@ -1,5 +1,5 @@
 /*==============================================================================
-Project: LiFe
+Project: VaLiPro
 Theme: LPP Solution Validator
 Module: Problem-bsfCode.cpp (Problem-dependent Code)
 Prefix: PC

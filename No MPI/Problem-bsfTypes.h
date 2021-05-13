@@ -1,5 +1,5 @@
 /*==============================================================================
-Project: LiFe
+Project: VaLiPro
 Theme: LPP Solution Validator
 Module: Problem-bsfTypes.h (Predefined Problem-depended BSF Types)
 Prefix: PT_bsf
