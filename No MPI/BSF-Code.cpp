@@ -1,6 +1,6 @@
 /*==============================================================================
-Project: VaLiPro
-Theme: LPP Solution Validator
+Project: LiFe
+Theme: LPP Validator (No MPI)
 Module: BSF-Code.cpp (Problem Independent Code)
 Prefix: BC
 Author: Leonid B. Sokolinsky
@@ -12,29 +12,38 @@ This source code is a part of BSF Skeleton (https://github.com/leonid-sokolinsky
 using namespace std;
 //======================================== Problem-independent codes (don't modify them) ====================================
 int main(int argc, char* argv[]) {
-
+	PC_bsf_MainArguments(argc, argv);	
 	PC_bsfAssignMpiRank(0);
 	PC_bsfAssignMpiMaster(0);
 	PC_bsfAssignNumOfWorkers(1);
-
 	BD_success = true;
 	PC_bsf_Init(&BD_success);
+	//
 	if (!BD_success) {
+		//
 		cout << "Error: PC_bsf_Init failed!" << endl;
+		//
 		exit(1);
 	};
-
 	BD_success = true;
 	BC_Init(&BD_success);
+	//
 	if (!BD_success) {
+		//
 		cout << "Error: BC_Init failed (not enough memory)!" << endl;
+		//
 		exit(1);
-	};
+	}
 
+	//
 	BC_Master();
-
+	//
+	//
+	//
+	//
+	//	
 	return 0;
-};
+}
 
 static void BC_Master() {// The head function of the master process.
 	PC_bsf_ParametersOutput(BD_order.parameter);
@@ -42,7 +51,7 @@ static void BC_Master() {// The head function of the master process.
 
 	BD_t = -(double)time(NULL);
 	do {
-		PC_bsf_JobDispatcher(&(BD_order.parameter), &BD_newJobCase, &BD_exit);
+		PC_bsf_JobDispatcher(&(BD_order.parameter), &BD_newJobCase, &BD_exit, BD_t + (double)time(NULL));
 		if (BD_exit) break;
 		BD_jobCase = BD_newJobCase;
 		if (BD_jobCase > PP_BSF_MAX_JOB_CASE) {
@@ -51,9 +60,9 @@ static void BC_Master() {// The head function of the master process.
 			break;
 		};
 		BC_MasterMap(!BD_EXIT);
+		///
 		BC_WorkerMap();
 		BC_WorkerReduce();
-
 		switch (BD_jobCase) {
 			case 0:
 			PC_bsf_ProcessResults(
@@ -126,7 +135,10 @@ static void BC_Master() {// The head function of the master process.
 
 		BD_iterCounter++;
 	} while (!BD_exit);
+
 	BD_t += (double)time(NULL);
+
+	//
 
 	switch (BD_jobCase) {
 	case 0:
@@ -147,6 +159,15 @@ static void BC_Master() {// The head function of the master process.
 	};
 };
 
+//
+//
+//
+//
+//
+//
+//
+//
+
 static void BC_MasterMap(bool exit) { // Forms an order and sends it to the worker processes to perform the Map function in the current iteration.
 	PC_bsfAssignJobCase(BD_jobCase);
 	PC_bsfAssignIterCounter(BD_iterCounter);
@@ -154,13 +175,73 @@ static void BC_MasterMap(bool exit) { // Forms an order and sends it to the work
 	BD_order.exit = exit;
 	BD_order.jobCase = BD_jobCase;
 	BD_order.iterCounter = BD_iterCounter;
+
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
 }
 
 static bool BC_WorkerMap() { // Performs the Map function
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+
 	if (BD_order.exit)
 		return BD_EXIT;
-
-	PC_bsf_SetListSize(&BD_listSize);
 
 	PC_bsfAssignJobCase(BD_order.jobCase);
 	PC_bsfAssignIterCounter(BD_order.iterCounter);
@@ -176,7 +257,9 @@ static bool BC_WorkerMap() { // Performs the Map function
 #endif // PP_BSF_NUM_THREADS
 #endif // PP_BSF_OMP
 	for (int i = 0; i < BD_listSize; i++) {
-
+		//
+		//
+		//
 		PC_bsfAssignNumberInSublist(i);
 		switch (BD_order.jobCase) {
 		case 0:
@@ -212,15 +295,19 @@ static void BC_WorkerReduce() {
 	switch (BD_order.jobCase) {
 	case 0:
 		BC_ProcessExtendedReduceList(BD_extendedReduceList, BD_listSize, &BD_extendedReduceResult_P);
+		//
 		break;
 	case 1:
 		BC_ProcessExtendedReduceList_1(BD_extendedReduceList_1, BD_listSize, &BD_extendedReduceResult_P_1);
+		//
 		break;
 	case 2:
 		BC_ProcessExtendedReduceList_2(BD_extendedReduceList_2, BD_listSize, &BD_extendedReduceResult_P_2);
+		//
 		break;
 	case 3:
 		BC_ProcessExtendedReduceList_3(BD_extendedReduceList_3, BD_listSize, &BD_extendedReduceResult_P_3);
+		//
 		break;
 	default:
 		cout << "BC_WorkerReduce Error: Undefined job type!" << endl;
@@ -321,15 +408,10 @@ static void BC_ProcessExtendedReduceList_3(BT_extendedReduceElem_T_3* reduceList
 };
 
 static void BC_Init(bool* success) {// Performs the memory allocation and the initialization of the skeleton data structures and variables.
-	cout << setprecision(PP_BSF_PRECISION);
-
 	BD_masterRank = 0;
 	BD_numOfWorkers = 1;
-	
 	PC_bsf_SetListSize(&BD_listSize);
-
 	PC_bsf_SetInitParameter(&(BD_order.parameter));
-
 	for (int i = 0; i < BD_listSize; i++)
 		PC_bsf_SetMapListElem(&BD_mapList[i], i);
 }

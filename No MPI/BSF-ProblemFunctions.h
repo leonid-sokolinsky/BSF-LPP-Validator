@@ -1,6 +1,6 @@
 /*==============================================================================
-Project: VaLiPro
-Theme: LPP Solution Validator
+Project: LiFe
+Theme: LPP Validator (No MPI)
 Module: BSF-ProblemFunctions.h (Predefined Problem Function Forwards)
 Author: Leonid B. Sokolinsky
 This source code is a part of BSF Skeleton (https://github.com/leonid-sokolinsky/BSF-skeleton)
@@ -45,8 +45,10 @@ void PC_bsf_IterOutput_3(
 void PC_bsf_JobDispatcher(
 	PT_bsf_parameter_T* parameter,
 	int* job,
-	bool* exit
+	bool* exit,
+	double t
 );
+void PC_bsf_MainArguments(int argc, char* argv[]);
 void PC_bsf_MapF(
 	PT_bsf_mapElem_T* mapElem, 
 	PT_bsf_reduceElem_T* reduceElem, 

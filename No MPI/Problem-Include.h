@@ -1,9 +1,10 @@
 /*==============================================================================
-Project: VaLiPro
+Project: LiFe
 Theme: LPP Solution Validator
 Module: Problem-Include.h (Problem "Include" Files)
 Author: Leonid B. Sokolinsky
 ==============================================================================*/
+#include <cassert>
 #include <float.h>
 #include <fstream>
 #include <iomanip>

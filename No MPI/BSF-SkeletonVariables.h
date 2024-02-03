@@ -1,6 +1,6 @@
 /*==============================================================================
-Project: VaLiPro
-Theme: LPP Solution Validator
+Project: LiFe
+Theme: LPP Validator (No MPI)
 Module: BSF-SceletonVariables.h (Skeleton Variables)
 Prefix: BSF_sv
 Author: Leonid B. Sokolinsky
