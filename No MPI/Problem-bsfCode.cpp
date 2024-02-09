@@ -1,6 +1,6 @@
 /*==============================================================================
 Project: LiFe
-Theme: LPP Solution Validator
+Theme: LPP Solution Validator (No MPI)
 Module: Problem-bsfCode.cpp (Problem-dependent Code)
 Prefix: PC
 Author: Leonid B. Sokolinsky
@@ -12,60 +12,63 @@ Author: Leonid B. Sokolinsky
 using namespace std;
 
 //----------------------- Predefined problem-dependent functions -----------------
-void PC_bsf_Init(bool *success) {
+void PC_bsf_Init(bool* success) {
 
 	if (PP_D % 2 == 0) {
-		cout << "PP_D = " << PP_D << " must be an odd number!" << endl;
+		// No MPI
+		cout
+			<< "PP_D = " << PP_D << " must be an odd number!" << endl;
 		*success = false;
-		system("pause");
 		return;
 	}
 
 	if (PP_D < 3) {
-		cout << "PP_D = " << PP_D << " must be greater than " << 2 << ".\n";
+		// No MPI
+		cout
+			<< "PP_D = " << PP_D << " must be greater than " << 2 << ".\n";
 		*success = false;
-		system("pause");
 		return;
 	}
 
+	// No MPI
 	*success = LoadMatrixFormat();
 	if (*success == false)
 		return;
 
 	if (PD_n < 3) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Dimension PD_n = " << PD_n << " must be greater than " << 2 << ".\n";
-		*success = false; 
-		system("pause");
-		return;
-	}
-
-	PD_K = (int)(2 * PP_D * pow(PP_D - 1, PD_n - 2));
-
-	if (PD_K > PP_MAX_K) {
-		cout << "Invalid input data: Number of points on hypersphere K = " << PD_K << " must be < " << PP_MAX_K + 1 << "\n";
-		cout << "You need to decrease the PP_D parameter in Problem-Parameters.h" << endl;
+		// No MPI
+		cout
+			<< "Dimension PD_n = " << PD_n << " must be greater than " << 2 << ".\n";
 		*success = false;
-		system("pause");
 		return;
 	}
+
+	double k = (2 * PP_D * pow(PP_D - 1, PD_n - 2));
+	if (k > PP_MAX_K) {
+		// No MPI
+		cout
+			<< "Number of points on hypersphere K = " << k << " must be < " << PP_MAX_K
+			<< "\nYou need to decrease the PP_D parameter in Problem-Parameters.h" << endl;
+		*success = false;
+		return;
+	}
+
+	PD_K = (int)(k);
 
 	PD_objF_x = ObjectiveF(PD_x);
 
 	*success = true;
-
-	cout << "The calculations have started, please wait..." << endl;
 }
 
-void PC_bsf_SetListSize(int *listSize) {
-	*listSize = (int)PD_K;
+void PC_bsf_SetListSize(int* listSize) {
+	*listSize = PD_K;
 }
 
 void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
 	// Nothing to do with stuff!
 }
 
-void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int *success) {	// For Job 0
+void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int* success) {	// For Job 0
 	PT_float_T objF_p;
 	int k = BSF_sv_addressOffset * PD_n + BSF_sv_numberInSublist;
 
@@ -76,7 +79,7 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 	/* Debug **
 	if (BSF_sv_mpiRank == 0) {
 		cout << "PC_bsf_MapF: ";
-		for (int j = 0; j < PD_n; j++) 
+		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << PD_p[j];
 	} /* End debug */
 
@@ -105,13 +108,13 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 			Vector_Copy(PD_p, PD_pMax);
 			PD_objF_pMax = objF_p;
 		}
-			/* Debug **
-			if (BSF_sv_mpiRank == 0) {
-				if (fabs(objF_p - PD_objF_x) >= PP_EPS_ZERO && objF_p + PP_EPS_ZERO >= PD_objF_x) {
-					cout << setw(PP_SETW) << "F(p)=" << objF_p << "\t>\tF(x)=" << PD_objF_x << endl;
-					system("pause");
-				}
-			} /* End debug */
+		/* Debug **
+		if (BSF_sv_mpiRank == 0) {
+			if (fabs(objF_p - PD_objF_x) >= PP_EPS_ZERO && objF_p + PP_EPS_ZERO >= PD_objF_x) {
+				cout << setw(PP_SETW) << "F(p)=" << objF_p << "\t>\tF(x)=" << PD_objF_x << endl;
+				system("pause");
+			}
+		} /* End debug */
 	}
 }
 
@@ -132,23 +135,23 @@ void PC_bsf_ReduceF(PT_bsf_reduceElem_T* x, PT_bsf_reduceElem_T* y, PT_bsf_reduc
 }
 
 void PC_bsf_ReduceF_1(PT_bsf_reduceElem_T_1* x, PT_bsf_reduceElem_T_1* y, PT_bsf_reduceElem_T_1* z) {	// For Job 1
-	// Optional filling. Do not delete!
+	// Not used.
 }
 
 void PC_bsf_ReduceF_2(PT_bsf_reduceElem_T_2* x, PT_bsf_reduceElem_T_2* y, PT_bsf_reduceElem_T_2* z) {	// For Job 2
-	// Optional filling. Do not delete!
+	// Not used.
 }
 
 void PC_bsf_ReduceF_3(PT_bsf_reduceElem_T_3* x, PT_bsf_reduceElem_T_3* y, PT_bsf_reduceElem_T_3* z) {	// For Job 3
-	// Optional filling. Do not delete!
+	// Not used.
 }
 
 void PC_bsf_ProcessResults(		// For Job 0
 	PT_bsf_reduceElem_T* reduceResult,
-	int reduceCounter, 
-	PT_bsf_parameter_T* parameter, 
-	int *nextJob,
-	bool *exit 
+	int reduceCounter,
+	PT_bsf_parameter_T* parameter,
+	int* nextJob,
+	bool* exit
 ) {
 	if (PD_firstTime) {
 		PD_solutionIsOk = reduceResult->ok;
@@ -170,32 +173,32 @@ void PC_bsf_ProcessResults(		// For Job 0
 
 void PC_bsf_ProcessResults_1(	// For Job 1	
 	PT_bsf_reduceElem_T_1* reduceResult,
-	int reduceCounter, 
-	PT_bsf_parameter_T* parameter, 
+	int reduceCounter,
+	PT_bsf_parameter_T* parameter,
 	int* nextJob,
-	bool* exit 
+	bool* exit
 ) {
-	// Optional filling. Do not delete!
+	// Not used.
 }
 
 void PC_bsf_ProcessResults_2(	// For Job 2
 	PT_bsf_reduceElem_T_2* reduceResult,
-	int reduceCounter, 
-	PT_bsf_parameter_T* parameter, 
+	int reduceCounter,
+	PT_bsf_parameter_T* parameter,
 	int* nextJob,
-	bool* exit 
-	) {
-	// Optional filling. Do not delete!
+	bool* exit
+) {
+	// Not used.
 }
 
 void PC_bsf_ProcessResults_3(	// For Job 3
 	PT_bsf_reduceElem_T_3* reduceResult,
-	int reduceCounter, 
-	PT_bsf_parameter_T* parameter, 
+	int reduceCounter,
+	PT_bsf_parameter_T* parameter,
 	int* nextJob,
-	bool* exit 
-	) {
-	// Optional filling. Do not delete!
+	bool* exit
+) {
+	// Not used.
 }
 
 void PC_bsf_JobDispatcher(
@@ -204,11 +207,12 @@ void PC_bsf_JobDispatcher(
 	bool* exit,
 	double t
 ) {
-	// Optional filling. Do not delete!
+	// Not used.
 }
 
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "=================================================== Problem parameters ====================================================" << endl;
+	cout << "Problem name: " << PD_problemName << endl;
 	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
 #ifdef PP_BSF_OMP
 #ifdef PP_BSF_NUM_THREADS
@@ -232,8 +236,8 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 		cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
 	};
 #endif // PP_MATRIX_OUTPUT
-	
-	cout << "Objective Function: c = "; 
+
+	cout << "Objective Function: c = ";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_c[j];
 	cout << (PP_OUTPUT_LIMIT < PD_n ? "	..." : "") << endl;
 	cout << "Solution to Check:  x = ";
@@ -253,85 +257,61 @@ void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_
 void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int jobCase) {	// For Job 1
 	cout << "------------------ " << BSF_sv_iterCounter << " ------------------" << endl;
-	// Optional filling. Do not delete!
+	// Not used
 
 }
 
 void PC_bsf_IterOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int jobCase) {	// For Job 2
 	cout << "------------------ " << BSF_sv_iterCounter << " ------------------" << endl;
-	// Optional filling. Do not delete!
+	// Not used
 
 }
 
 void PC_bsf_IterOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int jobCase) {	// For Job 3
 	cout << "------------------ " << BSF_sv_iterCounter << " ------------------" << endl;
-	// Optional filling. Do not delete!
+	// Not used
 
 }
 
 void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter, double t) {	// For Job 0
 	cout << "=============================================" << endl;
-	cout << "Points in polytope: " << round((PT_float_T)reduceCounter*100 / (PT_float_T)PD_K) << "%.\n";
+	cout << "Points in polytope: " << round((PT_float_T)reduceCounter * 100 / (PT_float_T)PD_K) << "%.\n";
 	if (PD_solutionIsOk) {
-		//const char* char_File;
-
 		cout << "The solution is correct!\n";
-		/*
-		// Copy trace.txt to *.trc
-		string fileName = to_string(PD_n) + "_" + to_string((int)fabs(PD_A[2 * PD_n + 1][0])) 
-												+ to_string((int)fabs(PD_A[2 * PD_n + 1][1])) 
-												+ to_string((int)fabs(PD_A[2 * PD_n + 1][2]));
-		PD_inTraceFile = PP_PATH;
-		PD_inTraceFile += PP_TRACE_FILE;
-		char_File = PD_inTraceFile.c_str();
-		ifstream inTraceFile(char_File);
-		PD_outTraceFile = PP_PATH;
-		PD_outTraceFile += fileName + ".trc";
-		char_File = PD_outTraceFile.c_str();
-		ofstream outTraceFile(char_File);
-		outTraceFile << inTraceFile.rdbuf();
-		PD_inLppFile = PP_PATH;
-		PD_inLppFile += PP_LPP_FILE;
-		char_File = PD_inLppFile.c_str();
-		ifstream inLppFile(char_File);
-		PD_outLppFile = PP_PATH;
-		PD_outLppFile += fileName + ".lpp";
-		char_File = PD_outLppFile.c_str();
-		ofstream outLppFile(char_File);
-		outLppFile << inLppFile.rdbuf();/**/
-	} else {
+	}
+	else {
 		cout << "The solution is NOT correct!\n";
+		cout << setprecision(16);
 		cout << "Correct solution:   p = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_x[j] << "\t";
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_x[PD_n - 1];
-		cout << "\t F(p) = " << ObjectiveF(PD_x) << endl;
-		//system("pause");
+		PD_objF_x = ObjectiveF(PD_x);
+		cout << "\t F(p) = " << PD_objF_x << endl;
 	}
-	//system("pause");
 }
 
 void PC_bsf_ProblemOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double t) {	// For Job 1
-	// Optional filling. Do not delete!
+	// Not used
 }
 
 void PC_bsf_ProblemOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double t) {	// For Job 2
-	// Optional filling. Do not delete!
+	// Not used
 }
 
 void PC_bsf_ProblemOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double t) {	// For Job 3
-	// Optional filling. Do not delete!
+	// Not used
 }
 
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 
 }
 
-void PC_bsf_SetMapListElem(PT_bsf_mapElem_T *elem, int i) {
+void PC_bsf_SetMapListElem(PT_bsf_mapElem_T* elem, int i) {
 	// Nothing to do with stuff!
 }
 
@@ -923,7 +903,7 @@ static void CheckPoint(PT_vector_T p, int k) {
 }
 
 static void Angles(PT_angles_T phi, int k) {
-	int P = (int)pow(PP_D - 1,PD_n - 2);
+	int P = (int)pow(PP_D - 1, PD_n - 2);
 	PT_float_T varphi = 3.1415926536 / PP_D;
 	int u[PP_N];
 

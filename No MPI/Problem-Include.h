@@ -1,6 +1,6 @@
 /*==============================================================================
 Project: LiFe
-Theme: LPP Solution Validator
+Theme: LPP Solution Validator (No MPI)
 Module: Problem-Include.h (Problem "Include" Files)
 Author: Leonid B. Sokolinsky
 ==============================================================================*/

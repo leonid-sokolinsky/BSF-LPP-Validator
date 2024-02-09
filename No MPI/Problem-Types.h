@@ -1,6 +1,6 @@
 /*==============================================================================
 Project: LiFe
-Theme: LPP Solution Validator
+Theme: LPP Solution Validator (No MPI)
 Module: Problem-Types.h (Problem Types)
 Prefix: PT
 Author: Leonid B. Sokolinsky

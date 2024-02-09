@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
 static void BC_Master() {// The head function of the master process.
 	PC_bsf_ParametersOutput(BD_order.parameter);
 	BD_iterCounter = 0;
-
+	PC_bsf_SetInitParameter(&(BD_order.parameter));
 	BD_t = -(double)time(NULL);
 	do {
 		PC_bsf_JobDispatcher(&(BD_order.parameter), &BD_newJobCase, &BD_exit, BD_t + (double)time(NULL));
@@ -408,6 +408,7 @@ static void BC_ProcessExtendedReduceList_3(BT_extendedReduceElem_T_3* reduceList
 };
 
 static void BC_Init(bool* success) {// Performs the memory allocation and the initialization of the skeleton data structures and variables.
+	cout << setprecision(PP_BSF_PRECISION);
 	BD_masterRank = 0;
 	BD_numOfWorkers = 1;
 	PC_bsf_SetListSize(&BD_listSize);

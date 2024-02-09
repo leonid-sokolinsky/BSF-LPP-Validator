@@ -1,6 +1,6 @@
 /*==============================================================================
 Project: LiFe
-Theme: LPP Solution Validator
+Theme: LPP Solution Validator (No MPI)
 Module: Problem-bsf-Forwards.h (Problem Function Forwards)
 Author: Leonid B. Sokolinsky 
 ==============================================================================*/

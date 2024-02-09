@@ -1,5 +1,5 @@
 /*==============================================================================
-Project: VaLiPro
+Project: LiFe
 Theme: LPP Solution Validator
 Module: Problem-bsfTypes.h (Predefined Problem-depended BSF Types)
 Prefix: PT_bsf
@@ -22,13 +22,13 @@ struct PT_bsf_reduceElem_T {	// Type of reduce-list elements for Job 0 (default)
 };
 
 struct PT_bsf_reduceElem_T_1 {	// Type of reduce-list elements for Job 1
-	// Optional filling. Do not delete!
+	// Not used.
 };
 
 struct PT_bsf_reduceElem_T_2 {	// Type of reduce-list elements for Job 2
-	// Optional filling. Do not delete!
+	// Not used.
 };
 
 struct PT_bsf_reduceElem_T_3 {	// Type of reduce-list elements for Job 3
-	// Optional filling. Do not delete!
+	// Not used.
 };

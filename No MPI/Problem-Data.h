@@ -1,6 +1,6 @@
 /*==============================================================================
 Project: LiFe
-Theme: LPP Solution Validator
+Theme: LPP Solution Validator (No MPI)
 Module: Problem-Data.h (Problem Data)
 Prefix: PD
 Author: Leonid B. Sokolinsky
@@ -74,27 +74,3 @@ x_1
 ...
 x_{nor}
 ------------ end of file----------------*/
-
-/*********************** To delete *************************/
-/*
-//========================== Files ================================================
-static string PD_lppFile; /* LPP file in the following format:
------------- begin of file -------------
-m n
-A_11 A_12 ... A_1n b_1
-A_21 A_22 ... A_2n b_2
-...
-A_m1 A_m2 ... A_mn b_m
-c_1 c_2 ... c_n
------------- end of file----------------*/
-/*
-static string PD_solutionFile;/* LPP solution file in the following format:
------------- begin of file -------------
-n
-x_1 x_2 ... x_n
------------- end of file----------------*/
-/*
-static string PD_inTraceFile;
-static string PD_outTraceFile;
-static string PD_inLppFile;
-static string PD_outLppFile;/**/

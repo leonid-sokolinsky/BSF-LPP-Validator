@@ -37,9 +37,9 @@ static BT_extendedReduceElem_T		BD_extendedReduceList[PP_BSF_REDUCE_LIST_LENGTH]
 static BT_extendedReduceElem_T_1	BD_extendedReduceList_1[PP_BSF_REDUCE_LIST_1_LENGTH];
 static BT_extendedReduceElem_T_2	BD_extendedReduceList_2[PP_BSF_REDUCE_LIST_2_LENGTH];
 static BT_extendedReduceElem_T_3	BD_extendedReduceList_3[PP_BSF_REDUCE_LIST_3_LENGTH];
-static BT_extendedReduceElem_T* BD_extendedReduceResult_P;
-static BT_extendedReduceElem_T_1* BD_extendedReduceResult_P_1;
-static BT_extendedReduceElem_T_2* BD_extendedReduceResult_P_2;
-static BT_extendedReduceElem_T_3* BD_extendedReduceResult_P_3;
+static BT_extendedReduceElem_T*		BD_extendedReduceResult_P;
+static BT_extendedReduceElem_T_1*	BD_extendedReduceResult_P_1;
+static BT_extendedReduceElem_T_2*	BD_extendedReduceResult_P_2;
+static BT_extendedReduceElem_T_3*	BD_extendedReduceResult_P_3;
 static PT_bsf_mapElem_T				BD_mapList[PP_BSF_MAP_LIST_LENGTH];
 static BT_order_T					BD_order;		// Order for Workers
